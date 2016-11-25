@@ -6,6 +6,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 import connection.Connection;
+import connection.Server;
 
 public class Message implements Serializable{
 
@@ -21,7 +22,7 @@ public class Message implements Serializable{
 	public Message() {
 
 		try {
-			this.ip = Connection.findIp();
+			this.ip = Server.findIp();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
