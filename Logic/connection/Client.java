@@ -1,86 +1,133 @@
 package connection;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
+import node.Node;
 import task.Message;
 
 public class Client implements Runnable{
 
 	private int port;
-
 	private String ip;
+	private Node node;
 	private String status;
 
 	private Socket socket;
 
-	private ObjectInputStream objectInputStream;
 	private ObjectOutputStream objectOutputStream;
 
 	private Thread threadClient;
 
 	private ArrayList<Message> leftMessages;
 	private ArrayList<Message> rightMessages;
-	
+
 	private ClientListen clientListen;
 
+	private boolean comeBack;
 
-	public Client(int port, String ip, ArrayList<Message> rightMessages, ArrayList<Message> leftMessages) throws UnknownHostException, IOException{
+	public Client(int port, String ip, Node node) throws UnknownHostException, IOException{
+
+		this.status = Constant.SEARCHING;
 
 		this.port = port;
 		this.ip = ip;
+		this.node = node;
 		this.threadClient = new Thread(this);
-		this.status = Connection.SEARCHING;
-		this.rightMessages = rightMessages;
-		this.leftMessages = leftMessages;
+		this.rightMessages = node.getRightMessages();
+		this.leftMessages = node.getLeftMessages();
+		this.comeBack = false;
+	}
+
+	private void searching(){
+		try {
+			this.socket = new Socket(this.ip, this.port);
+			this.objectOutputStream = new ObjectOutputStream(this.socket.getOutputStream());
+			this.status = Constant.CONNECTED;
+			this.clientListen = new ClientListen(this);
+		} catch (IOException e) {
+			this.status = Constant.SEARCHING;
+		}
+	}
+
+	private void connected(){
+		Constant.waitThread();
+		if((this.rightMessages.isEmpty() == false)){
+			try {
+				this.objectOutputStream.writeObject(this.rightMessages.get(0));
+				this.rightMessages.remove(0);				
+			} catch (IOException e) {
+				this.status = Constant.BROKEN;
+				System.err.println(e.getMessage());
+			}
+		}
+	}
+
+	private void broken(){
+		Constant.waitThread();
+		if (!this.comeBack) {
+			System.out.println("Cliente no puede enviar");
+			ArrayList<Message> aux = this.leftMessages;
+			this.leftMessages = new ArrayList<Message>();
+			this.leftMessages.add(new Message(Constant.COME_BACK));
+			this.leftMessages.addAll(aux);
+		}
 	}
 
 	private void client(){
-
 		switch (this.status) {
-		case Connection.SEARCHING:
-			try {
-				this.socket = new Socket(this.ip, this.port);
-				this.objectOutputStream = new ObjectOutputStream(this.socket.getOutputStream());
-				this.status = Connection.CONNECTED;
-				this.clientListen = new ClientListen(this.socket, this.leftMessages);
-				this.clientListen.getThreadListen().start();
-			} catch (IOException e) {
-				//				TO-DO
-				this.status = Connection.SEARCHING;
-				//*************************
-			}
+		case Constant.SEARCHING:
+			this.searching();
 			break;
-
-		case Connection.CONNECTED:
-			if((this.rightMessages.isEmpty() == false)){
-				try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				try {
-					this.objectOutputStream.writeObject(this.rightMessages.get(0));
-					this.rightMessages.remove(0);				
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
+		case Constant.CONNECTED:
+			this.connected();
+			break;
+		case Constant.BROKEN:
+			this.broken();
 			break;
 		}
 	}
 
-		@Override
+	@Override
 	public void run() {
 		while(true){
 			this.client();
 		}
+	}
+
+	public ObjectOutputStream getObjectOutputStream() {
+		return objectOutputStream;
+	}
+
+	public void setObjectOutputStream(ObjectOutputStream objectOutputStream) {
+		this.objectOutputStream = objectOutputStream;
+	}
+
+	public Socket getSocket() {
+		return socket;
+	}
+
+	public void setSocket(Socket socket) {
+		this.socket = socket;
+	}
+
+	public ArrayList<Message> getLeftMessages() {
+		return leftMessages;
+	}
+
+	public void setLeftMessages(ArrayList<Message> leftMessages) {
+		this.leftMessages = leftMessages;
+	}
+
+	public ArrayList<Message> getRightMessages() {
+		return rightMessages;
+	}
+
+	public void setRightMessages(ArrayList<Message> rightMessages) {
+		this.rightMessages = rightMessages;
 	}
 
 	public int getPort() {
@@ -99,36 +146,20 @@ public class Client implements Runnable{
 		this.ip = ip;
 	}
 
+	public Node getNode() {
+		return node;
+	}
+
+	public void setNode(Node node) {
+		this.node = node;
+	}
+
 	public String getStatus() {
 		return status;
 	}
 
 	public void setStatus(String status) {
 		this.status = status;
-	}
-
-	public Socket getSocket() {
-		return socket;
-	}
-
-	public void setSocket(Socket socket) {
-		this.socket = socket;
-	}
-
-	public ObjectInputStream getObjectInputStream() {
-		return objectInputStream;
-	}
-
-	public void setObjectInputStream(ObjectInputStream objectInputStream) {
-		this.objectInputStream = objectInputStream;
-	}
-
-	public ObjectOutputStream getObjectOutputStream() {
-		return objectOutputStream;
-	}
-
-	public void setObjectOutputStream(ObjectOutputStream objectOutputStream) {
-		this.objectOutputStream = objectOutputStream;
 	}
 
 	public Thread getThreadClient() {
@@ -139,19 +170,21 @@ public class Client implements Runnable{
 		this.threadClient = threadClient;
 	}
 
-	public ArrayList<Message> getLeftMessages() {
-		return leftMessages;
+	public ClientListen getClientListen() {
+		return clientListen;
 	}
 
-	public void setLeftMessages(ArrayList<Message> leftMessages) {
-		this.leftMessages = leftMessages;
+	public void setClientListen(ClientListen clientListen) {
+		this.clientListen = clientListen;
 	}
 
-	public ArrayList<Message> getRightMessages() {
-		return rightMessages;
+	public boolean isComeBack() {
+		return comeBack;
 	}
 
-	public void setRightMessages(ArrayList<Message> rightMessages) {
-		this.rightMessages = rightMessages;
+	public void setComeBack(boolean comeBack) {
+		this.comeBack = comeBack;
 	}
+
+	
 }

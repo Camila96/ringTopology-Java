@@ -1,10 +1,9 @@
 package frameConsole;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.Scanner;
 
-import connection.Server;
+import connection.Constant;
 import node.Node;
 import task.Message;
 
@@ -25,11 +24,7 @@ public class ConsoleNode implements Runnable{
 		this.scanner = new Scanner(System.in);
 
 		System.out.println("--------------------------- Informacion local ---------------------------");
-		try {
-			System.out.println("NODE IP: " + Server.findIp());
-		} catch (UnknownHostException e1) {
-			e1.printStackTrace();
-		}
+			System.out.println("NODE IP: " + Constant.findIp());
 		System.out.println("--------------------------Conectarse a otro host------------------------------");
 		System.out.print("Client ip: ");
 		this.ip = this.scanner.next();
@@ -59,10 +54,10 @@ public class ConsoleNode implements Runnable{
 			Scanner scanner1 = new Scanner(System.in);
 			switch (scanner1.next()) {
 			case "der":
-				this.node.getRightMessages().add(new Message());
+				this.node.getRightMessages().add(new Message('r'));
 				break;
 			case "izq":
-				this.node.getLeftMessages().add(new Message());
+				this.node.getLeftMessages().add(new Message('l'));
 				break;
 			default: 
 				System.out.println("No valido");

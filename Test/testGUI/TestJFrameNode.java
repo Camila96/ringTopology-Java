@@ -1,7 +1,6 @@
 package testGUI;
 
 import java.io.IOException;
-import java.util.Scanner;
 
 import frameConsole.ConsoleNode;
 

@@ -2,63 +2,102 @@ package connection;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
 import task.Message;
 
 public class ClientListen implements Runnable{
-	
-	private ArrayList<Message> leftMessages;
-	private Socket socket;
-	private ObjectInputStream objectInputStream;
-	private Thread threadListen;
 
-	public ClientListen(Socket socket, ArrayList<Message> leftMessages) throws IOException {
-		this.socket = socket;
-		this.leftMessages = leftMessages;
-		this.objectInputStream = new ObjectInputStream(this.socket.getInputStream());
+	private Thread threadListen;
+	private String status;
+	private Client client;
+	private ObjectInputStream objectInputStream;
+
+	public ClientListen(Client client) throws IOException {
+		this.client = client;
+		this.objectInputStream = new ObjectInputStream(this.client.getSocket().getInputStream());
+		this.status = Constant.LISTENING;
 		this.threadListen = new Thread(this);
+
+		this.threadListen.start();		
 	}
 
-	public void receive(){
-		System.out.println("client listen");
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+	private void add(Message message){
+		if(message.getType().equals(Constant.COME_BACK)){
+			ArrayList<Message> aux = this.client.getLeftMessages();
+			this.client.setLeftMessages(new ArrayList<Message>());
+			this.client.getLeftMessages().add(message);
+			this.client.getLeftMessages().addAll(aux);
+		}else{
+			this.client.getLeftMessages().add(message);
 		}
+	}
+
+	private void listening(){
+		Message message;
 		try {
-			Message message = (Message) this.objectInputStream.readObject();
-			this.leftMessages.add(message);
-			System.out.println(message.toString());				
+			message = (Message) this.objectInputStream.readObject();
+			this.add(message);
+			System.out.println(message.toString());
 		} catch (ClassNotFoundException | IOException e) {
-			e.printStackTrace();
+			System.err.println(e.getMessage());
+			this.status = Constant.WAITING;
+		}
+	}
+
+	public void waiting(){
+//	try {
+//			ServerSocket serverSocket = new ServerSocket(port);
+//			this.socket = serverSocket.accept();
+//			this.objectInputStream = new ObjectInputStream(this.socket.getInputStream());
+//			this.status = Constant.LISTENING;
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+	}
+
+	private void clientListen(){
+		switch (this.status) {
+		case Constant.LISTENING:
+			this.listening();
+			break;
+		case Constant.WAITING:
+			this.waiting();
+			break;
 		}
 	}
 
 	@Override
 	public void run() {
 		while(true){
-			this.receive();
+			this.clientListen();
 		}
 	}
 
-	public ArrayList<Message> getLeftMessages() {
-		return leftMessages;
+	public Thread getThreadListen() {
+		return threadListen;
 	}
 
-	public void setLeftMessages(ArrayList<Message> leftMessages) {
-		this.leftMessages = leftMessages;
+	public void setThreadListen(Thread threadListen) {
+		this.threadListen = threadListen;
 	}
 
-	public Socket getSocket() {
-		return socket;
+	public String getStatus() {
+		return status;
 	}
 
-	public void setSocket(Socket socket) {
-		this.socket = socket;
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public Client getClient() {
+		return client;
+	}
+
+	public void setClient(Client client) {
+		this.client = client;
 	}
 
 	public ObjectInputStream getObjectInputStream() {
@@ -69,12 +108,6 @@ public class ClientListen implements Runnable{
 		this.objectInputStream = objectInputStream;
 	}
 
-	public Thread getThreadListen() {
-		return threadListen;
-	}
 
-	public void setThreadListen(Thread threadListen) {
-		this.threadListen = threadListen;
-	}
 
 }

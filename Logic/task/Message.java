@@ -1,12 +1,10 @@
 package task;
 
 import java.io.Serializable;
-import java.net.UnknownHostException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-import connection.Connection;
-import connection.Server;
+import connection.Constant;
 
 public class Message implements Serializable{
 
@@ -14,20 +12,38 @@ public class Message implements Serializable{
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+
 	private String ip;
 	private String hour;
 	private String message;
-
+	private String type;
+	private String lastIp;
+	private String side;
 
 	public Message() {
-
-		try {
-			this.ip = Server.findIp();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
+		this.ip = Constant.findIp();
 		this.hour = this.hour();
 		this.message = this.randomNumber();
+		this.type = Constant.REAL;
+	}
+
+	public Message(char side){
+		this.ip = Constant.findIp();
+		this.hour = this.hour();
+		this.message = this.randomNumber();
+		this.type = Constant.REAL;
+		if (side == 'l') {
+			this.side = Constant.LEFT;
+		}else if (side == 'r') {
+			this.side =  Constant.RIGHT;
+		}
+	}
+
+	public Message(String type) {
+		this.ip = Constant.findIp();
+		this.hour = this.hour();
+		this.message = this.randomNumber();
+		this.type = type;
 	}
 
 	private String hour(){
@@ -42,7 +58,7 @@ public class Message implements Serializable{
 
 	@Override
 	public String toString() {
-		return "ip=" + ip + ";hour=" + hour + ";message=" + message;
+		return "Ip=" + ip + "; Hour=" + hour + "; Message=" + message + "; Type=" + type + "; Side=" + side;
 	}
 
 	public String getIp() {
@@ -67,6 +83,30 @@ public class Message implements Serializable{
 
 	public void setMessage(String message) {
 		this.message = message;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
+	public String getLastIp() {
+		return lastIp;
+	}
+
+	public void setLastIp(String lastIp) {
+		this.lastIp = lastIp;
+	}
+
+	public String getSide() {
+		return side;
+	}
+
+	public void setSide(String side) {
+		this.side = side;
 	}
 
 }

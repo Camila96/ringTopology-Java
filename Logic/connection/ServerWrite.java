@@ -2,69 +2,82 @@ package connection;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.net.Socket;
-import java.util.ArrayList;
-
-import task.Message;
 
 public class ServerWrite implements Runnable{
 
-	private ArrayList<Message> leftMessages;
-	private Socket socket;
-	private ObjectOutputStream objectOutputStream;
 	private Thread threadWrite;
+	private Server server;
+	private String status;
+	private ObjectOutputStream objectOutputStream;
 
-	public ServerWrite(Socket socket, ArrayList<Message> leftMessages) throws IOException {
-		this.socket = socket;
-		this.leftMessages = leftMessages;
-		this.objectOutputStream = new ObjectOutputStream(this.socket.getOutputStream());
+	public ServerWrite(Server server) throws IOException {
+		this.server = server;
+		this.objectOutputStream = new ObjectOutputStream(this.server.getSocket().getOutputStream());
+		this.status = Constant.CONNECTED;
 		this.threadWrite = new Thread(this);
+
+		this.threadWrite.start();
+	}
+
+	@SuppressWarnings("deprecation")
+	public boolean pause(){
+		if (!this.threadWrite.isInterrupted()) {
+			this.threadWrite.suspend();
+			return true;
+		}else{
+			return false;
+		}
 	}
 
 	public void send(){
-		System.out.println("serverWrite");
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-		if((this.leftMessages.isEmpty() == false)){
+		if(!this.server.getLeftMessages().isEmpty()){
+			Constant.waitThread();
 			try {
-				Thread.sleep(5000);
-			} catch (InterruptedException e1) {
-				e1.printStackTrace();
-			}
-			try {
-				this.objectOutputStream.writeObject(this.leftMessages.get(0));
-				this.leftMessages.remove(0);				
+				this.objectOutputStream.writeObject(this.server.getLeftMessages().get(0));
+				this.server.getLeftMessages().remove(0);				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 
-	@Override
-	public void run() {
-		while(true){
+	private void serverWrite(){
+		switch (this.status) {
+		case Constant.CONNECTED:
 			this.send();
+			break;
 		}
 	}
 
-	public ArrayList<Message> getLeftMessages() {
-		return leftMessages;
+	@Override
+	public void run() {
+		while(true){
+			this.serverWrite();
+		}
 	}
 
-	public void setLeftMessages(ArrayList<Message> leftMessages) {
-		this.leftMessages = leftMessages;
+	public Thread getThreadWrite() {
+		return threadWrite;
 	}
 
-	public Socket getSocket() {
-		return socket;
+	public void setThreadWrite(Thread threadWrite) {
+		this.threadWrite = threadWrite;
 	}
 
-	public void setSocket(Socket socket) {
-		this.socket = socket;
+	public Server getServer() {
+		return server;
+	}
+
+	public void setServer(Server server) {
+		this.server = server;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
 	public ObjectOutputStream getObjectOutputStream() {
@@ -75,11 +88,4 @@ public class ServerWrite implements Runnable{
 		this.objectOutputStream = objectOutputStream;
 	}
 
-	public Thread getThreadWrite() {
-		return threadWrite;
-	}
-
-	public void setThreadWrite(Thread threadWrite) {
-		this.threadWrite = threadWrite;
-	}
 }
